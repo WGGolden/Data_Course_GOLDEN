@@ -1,0 +1,6 @@
+1. Create a plaintext document named “final_project_idea.txt”
+2. In it, describe your idea for a data analysis final project
+	I want to build a predictive modeling system that analyzes the cryptocurrency Ethereum and shows when the stock will increase/decrease in value. I will use a data set of the price changes of Ethereum to make the predictive model. If a larger data set is needed for the model, I’d like to add a few NASDAQ stocks to the data set. 
+3. Also, Describe the sort of data you will use, potential sources, and what the data might look like
+   I can go to a market analysis website (for example, coindesk.com/price/ethereum/) and see the current and past prices of Ethereum. This data along with stock prices from nasdaq.com could go into my data set. The data should be a list of dates and prices for the selected stocks. I will focus primarily on Ethereum, and the model should spit out predictions of how much Ethereum will cost in the future. 
+
