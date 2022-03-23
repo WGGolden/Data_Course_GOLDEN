@@ -10,35 +10,181 @@ pagetitle: Assignment_9
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### William Golden 
 # **Assignment 9**
+## **Part 1: Analyzing Data**
 
-In this assignment, you will use R (within R-Studio) to:
+First I will load my r packages that I need.
+
+```{r,echo=TRUE,message=FALSE}
+library(tidyverse)
+library(modelr)
+library(easystats)
+library(GGally)
+```
+
+Next, I can load the desired data set. 
+```{r,echo=TRUE}
+df <- read.csv("../../Data/GradSchool_Admissions.csv")
+
+df %>% glimpse()
+```
   
-+ Load and clean a real data set
-+ Conduct exploratory analyses, including informative figures
-+ Build and test appropriate models
-+ Draw conclusions about your data
-+ Combine all of the above into a well-documented R-Markdown report and export (knit) it into an HTML file
+In order to model this data appropriately, I will make translate the data into binary code.
 
-**All file paths should be relative, starting from *your* Assignment_9 directory!!**
+```{r}
+df <- df %>% 
+  mutate(admit=case_when(admit == 1~ TRUE,
+                         admit == 0~ FALSE),
+         rank=factor(rank))
+```
 
-**This means that you need to create a new R-Project named "Assignment_9.Rproj" in your Assignment_9 directory, and work from scripts within that.**
+
+Let's look at graphs of each data set against one another to find what variables may correlate.
+
+```{r, message=FALSE}
+ggpairs(df)
+```
 
 
-## **For credit...**
+It looks like GPA and admit have a relationship as rank and admit. Let's try a different graph to analyze this data. 
 
-1.  Push a completed version of your Rproj and R-markdown file (details at end of this assignment) to GitHub
-2.  Your score will also depend on your analyses and presentation of your final report
+```{r}
+df %>% 
+  ggplot(aes(x=admit,y=gpa)) +
+  geom_boxplot()+
+  theme_minimal()+
+  facet_wrap(~rank)
+```
 
-____________
+It looks like a higher GPA increase the chance of being accepted. We also see that there is some variance between the acceptance rate and the rank of the schools.
 
-# Your tasks:
+## **Part 2: Modeling**
 
-+ Use the data set "/Data/GradSchool_Admissions.csv"
-+ You will explore and model the predictors of graduate school admission
-  - the "admit" column is coded as 1=success and 0=failure (that's binary, so model appropriately)
-  - the other columns are the GRE score, the GPA, and the rank of the undergraduate institution, where I is "top-tier."
-+ Document your data explorations, figures, and conclusions in a reproducible R-markdown report
-+ That means I want to see, in your html report, your process of model evaluation and selection. Here's an [example](https://gzahn.github.io/data-course/Repository/Assignments/Assignment_9/example.html){target="_blank"}
-+ Upload your **self-contained** R project, including knitted HTML report, to GitHub in *your* Assignment_9 directory
+Let's build models. The first model will be the most simple. 
+
+```{r}
+
+mod1 <- glm(data = df,
+            formula = admit ~ gpa,
+            family = "binomial")
+
+```
+
+Model two will be more complex and looks at the admission rate as a function of gpa, gre, and school rank.
+
+```{r}
+
+mod2 <- glm(data = df,
+            formula = admit ~ gpa + gre + rank,
+            family = "binomial") 
+
+```
+
+Model three wll be the most complicated which looks all variables and the interactions between themselves. 
+
+```{r}
+
+mod3 <- glm(data = df,
+            formula = admit ~ gpa*gre*rank,
+            family = "binomial") 
+```
+
+We can make one more model that is sligthly less complicated than model 3 but mroe complex than model 2. 
+
+```{r}
+
+mod4 <- glm(data=df,
+            formula = admit ~ (gpa*gre)+rank) # this is a bit less complex than mod3
+```
+
+### Time to test the models
+
+```{r,message=FALSE}
+comps <- compare_performance(mod1,mod2,mod3,mod4,
+                             rank=TRUE)
+```
+Model 2 has the higest score and model 4 is second best. By far, mod2 is the best fit model. It's not the most complex either so this model is looking appropriate to use
+
+### Lets graph the models 
+
+Here is model 2 predictions
+
+```{r,message=FALSE}
+add_predictions(df, mod2, type = "response") %>% 
+  ggplot(aes(x=gpa, y= pred, color= rank))+
+  geom_smooth() # this is model 2 graphed
+```
+
+Here is model 4 predictions
+
+```{r,message=FALSE}
+add_predictions(df, mod4, type = "response") %>% 
+  ggplot(aes(x=gpa, y= pred, color= rank))+
+  geom_smooth() # this is model 4 graphed
+```
+
+Here is the actual data of people admitted based off gpa score. 
+
+```{r}
+df %>% 
+  ggplot(aes(x=gpa,fill=admit))+
+  geom_bar()
+```
+
+Mod 4 has an overall higher chance of getting admitted into a program and we see in the actual data that this is true. We see that mod 2 (and model 4) predictions match the trend of real data, which is, the higher the GPA, the more likely you are accepted. Model 2 is still looking like the best model due to its simplicity and high score. 
+
+## Testing model 2
+
+Here we split our data into a test and train set
+
+```{r}
+set.seed(12345)
+train <- df %>% 
+  slice_sample(prop = .25)
+test <- anti_join(df,train) 
+
+mod <- train %>% 
+  glm(data = .,
+      formula = admit ~ gpa + gre + rank) 
+
+x <- test %>% 
+  add_residuals(model = mod) %>% 
+  pluck("resid") 
+
+data.frame(x=x %>% unlist ()) %>% 
+  ggplot(aes(x=x))+
+  geom_density() 
+```
+
+We see that model 2 has residuals around -0.3. This number is close to zero so the model is not terrible.
+
+## Let's test model 4 just to confirm it isn't as good as model 2
+
+```{r}
+set.seed(12345)
+train <- df %>% 
+  slice_sample(prop = .25)
+test <- anti_join(df,train)
+
+mod <- train %>% 
+  glm(data = .,
+      formula = admit ~ (gpa*gre)+rank)
+
+x <- test %>% 
+  add_residuals(model = mod) %>% 
+  pluck("resid")
+
+data.frame(x=x %>% unlist ()) %>% 
+  ggplot(aes(x=x))+
+  geom_density()
+```
+
+We see model 4 has a residual of -0.35 which is similar to mod 2 but has less predictions in this region and model 4 has more predictions that are in the 0.6 range, which is less accurate than what was predicted in model 2. Model 2 is still the best model. 
+
+
+
+
+
+
 
