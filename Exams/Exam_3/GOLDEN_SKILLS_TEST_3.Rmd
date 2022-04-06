@@ -1,0 +1,208 @@
+---
+title: "Exam 3"
+output: html_document
+author: William Golden
+---
+
+```{r setup, echo=FALSE,message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+First, let's load the packaages we need for this project. 
+```{r,message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+library(modelr)
+library(broom)
+```
+___
+
+# Tasks:
+  
+**1. Load and clean FacultySalaries_1995.csv file and Re-create the graph**
+
+Let's load the csv file and rename it "df". 
+
+```{r, echo=TRUE,message=FALSE}
+df <- read.csv("FacultySalaries_1995.csv")
+```
+
+To clean it, we will standardize the names using janitor package::clean_names, and we will remove a tier that is not listed on our target graph. We will then split the data into three sets 
+(assistant, full time, and associate), select the columns we need, rename the columns titled "avg salary" 
+to just "salary", then recombine these subsets into a new, clean data set. 
+
+```{r,echo=TRUE,message=FALSE}
+df <- clean_names(df)
+
+df <- df[!df$tier == "VIIB", ]
+
+assist <- df %>% 
+  select(starts_with("avg_assist"),-ends_with("comp"),state,tier)
+
+assist$rank <- "assist"
+
+assist <- assist %>% rename(.,salary=avg_assist_prof_salary)
+
+# assoc
+
+assoc <- df %>% 
+  select(starts_with("avg_assoc"),-ends_with("comp"),state,tier)
+
+assoc$rank <- "assoc"
+
+assoc <- assoc %>% rename(.,salary=avg_assoc_prof_salary)
+
+
+# Full
+
+full <- df %>% 
+  select(starts_with("avg_full"),-ends_with("comp"),state,tier)
+
+full$rank <- "full"
+
+full <- full %>% rename(.,salary=avg_full_prof_salary)
+
+
+# Combine data
+
+clean <- full_join(assoc,assist) %>% 
+  full_join(full)
+```
+
+Here is what the clean data set looks like  
+
+```{r}
+clean %>% glimpse
+```
+
+Now we make the graph!
+
+```{r echo=TRUE,message=FALSE}
+
+clean %>% 
+  ggplot(aes(x=rank,y=salary, fill=rank))+ 
+  geom_boxplot()+
+  facet_wrap(~tier)+
+  theme_bw()+
+  theme(strip.background = element_blank())+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))
+```
+
+
+
+
+**2. Build an ANOVA model and display the summary output in your report.**
+
+Here, we built a model showing the affect of state,tier, and rank on salary
+and display the ANNOVA model summary. 
+
+```{r,echo=TRUE,message=FALSE}
+mod <- glm(data=clean,
+           formula=salary~state+tier+rank)
+
+test <- aov(mod)
+summary(test)
+```
+
+
+
+**3. Load the "Juniper_Oils.csv" data and tidy it**
+        
+Let's load the data set and select the columns we need. We will also rename the columns of the chemicals to the same names used on our target graph. Next, we will pivot longer the columns of chemicals and put them
+into a new column labeled "ChemicalID". We will call this clean dataset "cleanoil". That's kind of funny
+since oil is not a very clean liquid. 
+
+```{r, message=FALSE}
+oil <- read.csv("Juniper_Oils.csv")
+
+oil <- clean_names(oil)
+
+cleanoil <- select(oil,"alpha_pinene","para_cymene","alpha_terpineol",
+              "cedr_9_ene","alpha_cedrene","beta_cedrene",
+              "cis_thujopsene","alpha_himachalene",
+              "beta_chamigrene","cuparene","compound_1",
+              "alpha_chamigrene","widdrol","cedrol","beta_acorenol"
+              ,"alpha_acorenol","gamma_eudesmol","beta_eudesmol"
+              ,"alpha_eudesmol","cedr_8_en_13_ol","cedr_8_en_15_ol",
+              "compound_2","thujopsenal", "years_since_burn") %>% 
+  rename("alpha-acorenol"="alpha_acorenol",
+             "alpha-pinene" ="alpha_pinene",
+             "para-cymene" ="para_cymene",
+             "alpha-terpineol" ="alpha_terpineol",
+             "cedr-9-ene" ="cedr_9_ene",
+             "alpha-cedrene"="alpha_cedrene",
+             "beta-cedrene"="beta_cedrene",
+             "cis-thujopsene" ="cis_thujopsene",
+             "alpha-himachalene"="alpha_himachalene",
+             "beta-chamigrene"="beta_chamigrene",
+             "compound 1"="compound_1",
+             "alpha-chamigrene" ="alpha_chamigrene",
+             "beta-acorenol" ="beta_acorenol",
+             "alpha-acorenol"="alpha_acorenol",
+             "gamma-eudesmol" ="gamma_eudesmol",
+             "beta-eudesmol" ="beta_eudesmol",
+             "alpha-eudesmol"="alpha_eudesmol",
+             "cedr-8-en-13-ol" ="cedr_8_en_13_ol",
+             "cedr-8-en-15-ol" ="cedr_8_en_15_ol",
+             "compound 2" ="compound_2",
+             "YearsSinceBurn" ="years_since_burn")
+
+
+cleanoil <- cleanoil %>% 
+  pivot_longer(c("alpha-pinene","para-cymene","alpha-terpineol",
+                    "cedr-9-ene","alpha-cedrene","beta-cedrene",
+                    "cis-thujopsene","alpha-himachalene",
+                    "beta-chamigrene","cuparene","compound 1",
+                    "alpha-chamigrene","widdrol","cedrol","beta-acorenol"
+                    ,"alpha-acorenol","gamma-eudesmol","beta-eudesmol"
+                    ,"alpha-eudesmol","cedr-8-en-13-ol","cedr-8-en-15-ol",
+                    "compound 2","thujopsenal"),
+               names_to = "ChemicalID",
+               values_to = "Concentration")
+```
+
+        
+                                                         
+**4. Make a graph of the following:**
+
+        x = YearsSinceBurn
+        y = Concentration
+        facet = ChemicalID (use free y-axis scales)
+        
+Here is our code to make this graph:
+
+```{r}
+
+cleanoil %>% 
+  ggplot(aes(x = YearsSinceBurn,y = Concentration))+
+  geom_smooth()+
+  facet_wrap(~ChemicalID, scales = "free")
+
+```
+
+**5. Use a generalized linear model to find which chemicals show concentrations that are significantly (significant, as in P < 0.05) affected by "Years Since Burn".**
+
+First let's create a model looking at how the chemical type and years since burnt effects the concentration. 
+
+```{r, echo=TRUE,message=FALSE}
+mod2 <- glm(data=cleanoil,
+            formula = Concentration~ChemicalID:YearsSinceBurn)
+
+```
+
+Now we use the tidy function to create a data frame showing JUST the significant chemicals and their model output (coefficient estimates, p-values, etc). 
+```{r}
+m <- tidy(mod2)
+
+m %>% filter(m$p.value<0.05)
+
+```
+
+
+
+
+
+
+                                                                                                              
+                                                                                                    
