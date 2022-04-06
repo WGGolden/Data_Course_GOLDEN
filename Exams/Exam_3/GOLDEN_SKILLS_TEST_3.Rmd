@@ -2,13 +2,16 @@
 title: "Exam 3"
 output: html_document
 author: William Golden
+
 ---
 
 ```{r setup, echo=FALSE,message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-First, let's load the packaages we need for this project. 
+<body style="background-color:#e9f0ef;">
+
+First, let's load the packages we need for this project. 
 ```{r,message=FALSE}
 library(tidyverse)
 library(ggplot2)
