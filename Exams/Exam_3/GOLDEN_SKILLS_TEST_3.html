@@ -171,7 +171,7 @@ pre code {
 
 
 <body style="background-color:#e9f0ef;">
-<p>First, let’s load the packaages we need for this project.</p>
+<p>First, let’s load the packages we need for this project.</p>
 <pre class="r"><code>library(tidyverse)
 library(ggplot2)
 library(janitor)
@@ -315,32 +315,21 @@ cleanoil &lt;- cleanoil %&gt;%
 <p><strong>5. Use a generalized linear model to find which chemicals show concentrations that are significantly (significant, as in P &lt; 0.05) affected by “Years Since Burn”.</strong></p>
 <p>First let’s create a model looking at how the chemical type and years since burnt effects the concentration.</p>
 <pre class="r"><code>mod2 &lt;- glm(data=cleanoil,
-            formula = Concentration~ChemicalID:YearsSinceBurn)</code></pre>
+            formula = Concentration~ChemicalID * YearsSinceBurn)</code></pre>
 <p>Now we use the tidy function to create a data frame showing JUST the significant chemicals and their model output (coefficient estimates, p-values, etc).</p>
-<pre class="r"><code>m &lt;- tidy(mod2)
+<pre class="r"><code>m &lt;- tidy(mod2) %&gt;% 
+  mutate(term=term %&gt;% str_remove_all(&quot;ChemicalID&quot;))
 
 m %&gt;% filter(m$p.value&lt;0.05)</code></pre>
-<pre><code>## # A tibble: 18 × 5
-##    term                                    estimate std.error statistic  p.value
-##    &lt;chr&gt;                                      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-##  1 (Intercept)                                3.74     0.349      10.7  4.71e-25
-##  2 ChemicalIDalpha-acorenol:YearsSinceBurn   -0.229    0.0611     -3.74 1.96e- 4
-##  3 ChemicalIDalpha-cedrene:YearsSinceBurn     0.508    0.0611      8.31 4.40e-16
-##  4 ChemicalIDalpha-chamigrene:YearsSinceB…   -0.197    0.0611     -3.23 1.29e- 3
-##  5 ChemicalIDalpha-eudesmol:YearsSinceBurn   -0.186    0.0611     -3.05 2.40e- 3
-##  6 ChemicalIDalpha-himachalene:YearsSince…   -0.219    0.0611     -3.58 3.69e- 4
-##  7 ChemicalIDalpha-pinene:YearsSinceBurn     -0.228    0.0611     -3.73 2.09e- 4
-##  8 ChemicalIDalpha-terpineol:YearsSinceBu…   -0.158    0.0611     -2.59 9.91e- 3
-##  9 ChemicalIDbeta-acorenol:YearsSinceBurn    -0.218    0.0611     -3.57 3.77e- 4
-## 10 ChemicalIDbeta-chamigrene:YearsSinceBu…   -0.177    0.0611     -2.90 3.89e- 3
-## 11 ChemicalIDcedr-8-en-15-ol:YearsSinceBu…   -0.139    0.0611     -2.28 2.29e- 2
-## 12 ChemicalIDcedr-9-ene:YearsSinceBurn       -0.194    0.0611     -3.18 1.51e- 3
-## 13 ChemicalIDcedrol:YearsSinceBurn            1.01     0.0611     16.5  2.83e-52
-## 14 ChemicalIDcis-thujopsene:YearsSinceBurn    1.22     0.0611     20.0  9.82e-72
-## 15 ChemicalIDcompound 2:YearsSinceBurn       -0.163    0.0611     -2.67 7.70e- 3
-## 16 ChemicalIDgamma-eudesmol:YearsSinceBurn   -0.142    0.0611     -2.32 2.05e- 2
-## 17 ChemicalIDpara-cymene:YearsSinceBurn      -0.194    0.0611     -3.17 1.59e- 3
-## 18 ChemicalIDwiddrol:YearsSinceBurn           0.174    0.0611      2.85 4.50e- 3</code></pre>
+<pre><code>## # A tibble: 6 × 5
+##   term                          estimate std.error statistic  p.value
+##   &lt;chr&gt;                            &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 alpha-cedrene                    7.88      1.93       4.08 4.97e- 5
+## 2 cedr-8-en-13-ol                  7.62      1.93       3.95 8.72e- 5
+## 3 cedrol                          22.5       1.93      11.7  5.12e-29
+## 4 cis-thujopsene                  17.3       1.93       8.95 2.93e-18
+## 5 widdrol                          5.82      1.93       3.01 2.69e- 3
+## 6 cis-thujopsene:YearsSinceBurn    0.332     0.141      2.35 1.90e- 2</code></pre>
 </div>
 
 

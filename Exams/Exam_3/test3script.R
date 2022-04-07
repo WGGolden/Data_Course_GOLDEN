@@ -135,7 +135,7 @@ cleanoil %>%
 cleanoil %>% glimpse
 
 mod2 <- glm(data=cleanoil,
-            formula = Concentration~ChemicalID:YearsSinceBurn)
+            formula = Concentration~ChemicalID*YearsSinceBurn)
 summary(mod2)    
 
 m <- tidy(mod2)

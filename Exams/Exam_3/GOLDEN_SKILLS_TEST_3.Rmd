@@ -190,13 +190,14 @@ First let's create a model looking at how the chemical type and years since burn
 
 ```{r, echo=TRUE,message=FALSE}
 mod2 <- glm(data=cleanoil,
-            formula = Concentration~ChemicalID:YearsSinceBurn)
+            formula = Concentration~ChemicalID * YearsSinceBurn)
 
 ```
 
 Now we use the tidy function to create a data frame showing JUST the significant chemicals and their model output (coefficient estimates, p-values, etc). 
 ```{r}
-m <- tidy(mod2)
+m <- tidy(mod2) %>% 
+  mutate(term=term %>% str_remove_all("ChemicalID"))
 
 m %>% filter(m$p.value<0.05)
 
